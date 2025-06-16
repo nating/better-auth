@@ -142,11 +142,17 @@ export const mcp = (options: MCPOptions) => {
 						const response = await authorizeMCPOAuth(ctx, opts).catch((e) => {
 							if (e instanceof APIError) {
 								if (e.statusCode === 302) {
-									return ctx.json({
-										redirect: true,
+									const fromFetch = ctx.request?.headers.get("sec-fetch-mode") === "cors";
+									if (fromFetch) {
+										return ctx.json({
+											redirect: true,
+											//@ts-expect-error
+											url: e.headers.get("location"),
+										});
+									} else {
 										//@ts-expect-error
-										url: e.headers.get("location"),
-									});
+										throw ctx.redirect(e.headers.get("location"));
+									}
 								}
 							}
 							throw e;
